@@ -1,4 +1,3 @@
-// src/components/Header.jsx
 import React from 'react';
 
 const Header = () => {
@@ -10,18 +9,22 @@ const Header = () => {
         <div className="text-2xl font-bold text-gray-800">
           <span className="text-white">Aliss</span>
           <span className="text-purple-600">=</span>
-          <span className="text-white">on</span>
+          <span className="text-white">on.</span>
         </div>
 
         {/* Menu de navegação (desktop) */}
-        <nav className="hidden lg:flex space-x-6 text-gray-600 font-medium text-sm">
-          <a href="#hero" className=" hover:text-purple-600 transition">Início</a>
-          <a href="#about" className="hover:text-purple-600 transition">Sobre</a>
-          <a href="#about" className="hover:text-purple-600 transition">Serviços</a>
-          <a href="#about" className="hover:text-purple-600 transition">Feedback</a>
-          <a href="#about" className="hover:text-purple-600 transition">Experiência</a>
-          <a href="#contact" className="hover:text-purple-600 transition">Contate-me</a>
+        <nav className="hidden lg:flex space-x-6 text-gray-600 text-xl">
+          {["Início", "Sobre", "Serviços", "Feedback", "Experiência", "Contate-me"].map((text, i) => (
+            <a
+              key={i}
+              href={`#${text.toLowerCase()}`}
+              className="relative after:content-[''] after:absolute after:left-0 after:-bottom-1 after:w-0 after:h-[2px] after:bg-purple-600 after:transition-all after:duration-600 hover:after:w-full hover:text-purple-600"
+            >
+              {text}
+            </a>
+          ))}
         </nav>
+
 
         {/* Botão de ação */}
         <div className="hidden lg:block">
