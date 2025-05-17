@@ -7,9 +7,9 @@ const Header = () => {
         
         {/* Logo */}
         <div className="text-2xl font-bold text-gray-800">
-          <span className="text-white">Aliss</span>
+          <span className="text-black">Aliss</span>
           <span className="text-purple-600">=</span>
-          <span className="text-white">on.</span>
+          <span className="text-black">on.</span>
         </div>
 
         {/* Menu de navegação (desktop) */}
@@ -35,6 +35,7 @@ const Header = () => {
             DOWNLOAD CV
           </a>
         </div>
+        
 
         {/* Menu mobile (hambúrguer) */}
         <div className="lg:hidden dropdown dropdown-end">
@@ -47,14 +48,14 @@ const Header = () => {
           </label>
           <ul 
             tabIndex={0} 
-            className="menu menu-sm dropdown-content mt-3 z-[1] p-4 shadow bg-white rounded-box w-56 text-sm text-gray-700"
+            className="menu menu-md dropdown-content mt-3 z-[1] p-4 shadow bg-white  rounded-box w-56 text-sm text-gray-700"
           >
-            <li><a href="#hero">Início</a></li>
-            <li><a href="#about">Sobre</a></li>
-            <li><a href="#about">Serviços</a></li>
-            <li><a href="#about">Feedback</a></li>
-            <li><a href="#about">Experiência</a></li>
-            <li><a href="#contact">Contate-me</a></li>
+            <li><a className='hover:bg-purple-100' href="#hero">Início</a></li>
+            <li><a className='hover:bg-purple-100' href="#about">Sobre</a></li>
+            <li><a className='hover:bg-purple-100' href="#about">Serviços</a></li>
+            <li><a className='hover:bg-purple-100' href="#about">Feedback</a></li>
+            <li><a className='hover:bg-purple-100' href="#about">Experiência</a></li>
+            <li><a className='hover:bg-purple-100' href="#contact">Contate-me</a></li>
             <li>
               <a 
                 href="#contact" 

@@ -10,6 +10,7 @@ const Home = () => {
   return (
     <>
       <Header />
+      <Hero />
       <main>
       </main>
     </>
