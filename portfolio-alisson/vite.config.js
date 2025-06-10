@@ -4,4 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  server: {
+    // Desabilita o Hot Module Replacement (HMR)
+    hmr: true 
+  }
 })

@@ -37,21 +37,6 @@ const UserIcon = ({ size = 20 }) => (
   </svg>
 );
 
-// Função para decodificar JWT e extrair informações do usuário
-const decodeJWT = (token) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Erro ao decodificar JWT:', error);
-    return null;
-  }
-};
 
 // Componente principal do Chat
 const ChatSystem = () => {
@@ -65,46 +50,19 @@ const ChatSystem = () => {
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null); // Agora será definido dinamicamente
+  const [currentUser, setCurrentUser] = useState({ id: 1, name: "Usuário Atual" }); // Configure com seus dados
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const activeConversationRef = useRef(activeConversation);
+  const activeConversationRef = useRef(activeConversation); // Usar ref para ter o valor mais atual nos listeners
 
   // URL base da API
   const API_BASE_URL = 'https://localhost:7155';
   
   // Token de autenticação
   const getAuthToken = () => {
-    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmciLCJlbWFpbCI6InN0cmluZ0BnbWFpbC5jb20iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiJjMTJiMzlhMC0zYTMxLTQwMTEtYWFjMy01NDliODUwNTUxOGYiLCJqdGkiOiI3ODY2ODZiZS0yYTRmLTQ5YmEtYTlhYS00OTEyOTNlMGQyNzkiLCJleHAiOjE3NDk1MjAxMzksImlzcyI6IlNldUlzc3VlciIsImF1ZCI6IlNldUF1ZGllbmNlIn0.mkk04NYUjUcWXCr9A55zpaHURiab2tdF_kvwH_OdYvM'
+    return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdHJpbmciLCJlbWFpbCI6InN0cmluZ0BnbWFpbC5jb20iLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9zaWQiOiJjMTJiMzlhMC0zYTMxLTQwMTEtYWFjMy01NDliODUwNTUxOGYiLCJqdGkiOiI2ZDRkZmViZi1iNGEyLTRmNDktYTQzMi01YzVhNGFjMzc0MjMiLCJleHAiOjE3NDk0MTEyNjAsImlzcyI6IlNldUlzc3VlciIsImF1ZCI6IlNldUF1ZGllbmNlIn0.EIhcVubwrCXG37IIcG0AJJqx3hfToC1nTmbYt5YIzqU'
   }
-
-  // Função para obter informações do usuário atual do token
-  const getCurrentUserFromToken = () => {
-    const token = getAuthToken();
-    if (!token) return null;
-    
-    const decoded = decodeJWT(token);
-    if (!decoded) return null;
-    
-    return {
-      id: decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sid"] || decoded.sid,
-      email: decoded.email || decoded.sub,
-      name: decoded.name || decoded.email || "Usuário"
-    };
-  };
-
-  // Inicializar usuário atual
-  useEffect(() => {
-    const user = getCurrentUserFromToken();
-    if (user) {
-      setCurrentUser(user);
-      console.log('Usuário atual carregado:', user);
-    } else {
-      console.error('Não foi possível obter informações do usuário do token');
-    }
-  }, []);
-
   // Atualiza a ref sempre que activeConversation mudar
   useEffect(() => {
     activeConversationRef.current = activeConversation;
@@ -121,8 +79,6 @@ const ChatSystem = () => {
 
   // Efeito 1: Cria e estabelece a conexão SignalR UMA VEZ
   useEffect(() => {
-    if (!currentUser) return; // Só cria conexão quando tiver o usuário
-
     const newConnection = new HubConnectionBuilder()
       .withUrl(`${API_BASE_URL}/chathub`, {
         accessTokenFactory: () => getAuthToken()
@@ -136,11 +92,11 @@ const ChatSystem = () => {
     return () => {
       newConnection.stop();
     };
-  }, [currentUser]); // Depende do currentUser
+  }, []); // <-- Array de dependências vazio, executa apenas uma vez
 
   // Efeito 2: Inicia a conexão e registra os listeners UMA VEZ
   useEffect(() => {
-    if (connection && connection.state === 'Disconnected' && currentUser) {
+    if (connection && connection.state === 'Disconnected') {
       connection.start()
         .then(() => {
           console.log('Conectado ao SignalR');
@@ -180,7 +136,7 @@ const ChatSystem = () => {
             if (currentActiveConvo && data.conversationId === currentActiveConvo.conversationId) {
               setTypingUsers(prev => {
                 const newSet = new Set(prev);
-                if (data.isTyping && data.userName !== currentUser?.name) {
+                if (data.isTyping) {
                   newSet.add(data.userName);
                 } else {
                   newSet.delete(data.userName);
@@ -220,7 +176,7 @@ const ChatSystem = () => {
           setIsConnected(false);
         });
     }
-  }, [connection, currentUser]);
+  }, [connection, currentUser?.id]); // Depende apenas da conexão e do ID do usuário
 
   // Função para fazer requisições autenticadas
   const fetchWithAuth = async (url, options = {}) => {
@@ -330,52 +286,57 @@ const ChatSystem = () => {
     }
   };
 
-  // Enviar mensagem
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    
-    if (!newMessage.trim() || !activeConversation || !isConnected || !currentUser) return;
+// Substitua esta função no seu arquivo .jsx
 
-    try {
-      // Chamando o endpoint da sua controller via HTTP POST
-      const response = await fetchWithAuth(`${API_BASE_URL}/message/send`, {
-        method: 'POST',
-        body: JSON.stringify({
-          receiverId: activeConversation.otherUserId,
-          message: newMessage.trim()
-        })
-      });
+// Substitua esta função no seu arquivo .jsx - ESTA É A VERSÃO CORRETA
 
-      if (response.ok) {
-        // 1. PEGA A RESPOSTA DA API: A controller retorna a mensagem completa que foi salva no banco.
-        const sentMessage = await response.json(); 
-        
-        // 2. ATUALIZAÇÃO OTIMISTA: Adiciona a mensagem que VOCÊ enviou diretamente ao estado da UI.
-        setMessages(prev => [...prev, sentMessage]);
+// Substitua a sua função sendMessage por esta versão final
 
-        // 3. Limpa o input
-        setNewMessage('');
-        stopTyping();
-        
-        // 4. BÔNUS: Atualiza a lista de conversas para refletir a "última mensagem"
-        loadConversations();
+const sendMessage = async (e) => {
+  e.preventDefault();
+  
+  if (!newMessage.trim() || !activeConversation || !isConnected) return;
 
-      } else {
-        console.error('Erro ao enviar mensagem para a API');
-        // Adicional: Informar o usuário sobre o erro na UI, se desejar.
-      }
-    } catch (error) {
-      console.error('Erro de rede ao enviar mensagem:', error);
+  try {
+    // Chamando o endpoint da sua controller via HTTP POST
+    const response = await fetchWithAuth(`${API_BASE_URL}/message/send`, {
+      method: 'POST',
+      body: JSON.stringify({
+        receiverId: activeConversation.otherUserId,
+        message: newMessage.trim()
+      })
+    });
+
+    if (response.ok) {
+      // 1. PEGA A RESPOSTA DA API: A controller retorna a mensagem completa que foi salva no banco.
+      const sentMessage = await response.json(); 
+      
+      // 2. ATUALIZAÇÃO OTIMISTA: Adiciona a mensagem que VOCÊ enviou diretamente ao estado da UI.
+      setMessages(prev => [...prev, sentMessage]);
+
+      // 3. Limpa o input
+      setNewMessage('');
+      stopTyping();
+      
+      // 4. BÔNUS: Atualiza a lista de conversas para refletir a "última mensagem"
+      loadConversations();
+
+    } else {
+      console.error('Erro ao enviar mensagem para a API');
+      // Adicional: Informar o usuário sobre o erro na UI, se desejar.
     }
-  };
+  } catch (error) {
+    console.error('Erro de rede ao enviar mensagem:', error);
+  }
+};
 
   // Notificar digitação
   const handleTyping = (e) => {
     setNewMessage(e.target.value);
     
-    if (!isTyping && connection && isConnected && activeConversation && currentUser) {
+    if (!isTyping && connection && isConnected && activeConversation) {
       setIsTyping(true);
-      connection.invoke('NotifyTyping', activeConversation.conversationId, currentUser.name);
+      connection.invoke('NotifyTyping', activeConversation.conversationId, currentUser?.name || 'Usuário');
     }
 
     if (typingTimeoutRef.current) {
@@ -389,19 +350,14 @@ const ChatSystem = () => {
 
   // Parar notificação de digitação
   const stopTyping = () => {
-    if (isTyping && connection && isConnected && activeConversation && currentUser) {
+    if (isTyping && connection && isConnected && activeConversation) {
       setIsTyping(false);
-      connection.invoke('NotifyStoppedTyping', activeConversation.conversationId, currentUser.name);
+      connection.invoke('NotifyStoppedTyping', activeConversation.conversationId, currentUser?.name || 'Usuário');
     }
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-  };
-
-  // Verificar se a mensagem é do usuário atual
-  const isMyMessage = (message) => {
-    return currentUser && message.senderId === currentUser.id;
   };
 
   // Formatar data
@@ -416,18 +372,6 @@ const ChatSystem = () => {
     if (diff < 604800000) return date.toLocaleDateString('pt-BR', { weekday: 'short' });
     return date.toLocaleDateString('pt-BR');
   };
-
-  // Se não tiver usuário carregado, mostrar loading
-  if (!currentUser) {
-    return (
-      <div className="flex h-screen bg-gray-100 items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando informações do usuário...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -448,7 +392,6 @@ const ChatSystem = () => {
               )}
             </div>
           </div>
-          <p className="text-sm text-gray-500 mt-1">Logado como: {currentUser.name}</p>
         </div>
         
         <div className="flex-1 overflow-y-auto">
@@ -551,11 +494,11 @@ const ChatSystem = () => {
                 messages.map((message) => (
                   <div
                     key={message.id}
-                    className={`flex ${isMyMessage(message) ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${message.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                        isMyMessage(message)
+                        message.senderId === currentUser?.id
                           ? 'bg-blue-500 text-white'
                           : 'bg-gray-200 text-gray-800'
                       }`}
@@ -565,7 +508,7 @@ const ChatSystem = () => {
                         <span className="text-xs opacity-75">
                           {formatDate(message.created)}
                         </span>
-                        {isMyMessage(message) && (
+                        {message.senderId === currentUser?.id && (
                           <span className="text-xs opacity-75">
                             {message.isRead ? '✓✓' : '✓'}
                           </span>
